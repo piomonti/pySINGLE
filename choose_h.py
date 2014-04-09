@@ -2,10 +2,9 @@
 
 # Note that it is assumed data is temporally arranged.
 
-if __name__=='__main__':
-    import pandas
-    import math
-    import numpy
+import pandas
+import math
+import numpy
 
 
 def choose_h(data, rad_list, samples=None):
@@ -19,8 +18,11 @@ def choose_h(data, rad_list, samples=None):
     """
     
     if samples==None:
-	samples = range(data.shape[0])
+	samples = range(1,data.shape[0])
     
+    if 0 in samples:
+	samples.pop(samples.index(0))
+
     results = [ CV_LL(data, radius=x, samples=samples) for x in rad_list]
     
     return rad_list[results.index(max(results))]
@@ -47,7 +49,7 @@ def estLL(data, ID, radius, mean_):
     mu_est = get_kern_mean_ind(data, ID=ID, radius=radius, CV=True)
     cov_est = get_kern_cov_ind(data, ID=ID, mean_=mean_, radius=radius, CV=True)
     
-    log_lik = math.log(numpy.linalg.det(cov_est)) + (numpy.matrix(data[ID,:]-mu_est)*numpy.matrix(cov_est).I*numpy.matrix(data[ID,:]-mu_est).T)[0,0]
+    log_lik = math.log(numpy.linalg.det(cov_est)) + (numpy.matrix(data[ID,:]-mu_est)*(numpy.matrix(cov_est).I)*numpy.matrix(data[ID,:]-mu_est).T)[0,0]
 
     return -0.5*log_lik
     

@@ -3,6 +3,13 @@
 #
 #
 
+from choose_h import *
+from fitSINGLE import *
+from plotSINGLE import plotSINGLE
+
+import numpy
+import spams
+
 class SINGLE():
     '''Class for SINGLE objects
     
@@ -22,6 +29,14 @@ class SINGLE():
 	self.iter_ = None
 	self.AIC = None
 	
+	
+    def __repr__(self):
+	mes = " ### SINGLE ###\n"
+	if self.h!=None: mes += " # h:  " + str(self.h) + "\n"
+	if self.l1!=None: mes += " # l1: " + str(self.l1) + "\n"
+	if self.l2!=None: mes += " # l2: " + str(self.l2) + "\n"
+	return mes
+	
     def fit_radius(self, h_vals, samples):
 	self.h = choose_h(data=self.data, rad_list=h_vals, samples=samples)
 	# function to choose h (kernel width)
@@ -34,26 +49,31 @@ class SINGLE():
 	if self.h==None:
 	    raise Exception("Need to either provide Gaussian kernel radius, h, or estimate this using the choose_h function")
 	
-	C = get_kern_cov(data, radius=self.h)
+	C = get_kern_cov(self.data, radius=self.h)
 	C_ = [None]*len(C)
 	for i in range(len(C)):
 	    C_[i] = C[i,:,:]
 	AIC_results = numpy.zeros((len(l1),len(l2)))
 	for i in range(len(l1)):
 	    for j in range(len(l2)):
-		a,b,c,AIC_results[i,j] = fitSINGLE(S=C_, l1=l1[i], l2=l2[j])
+		a,b,c,AIC_results[i,j] = fitSINGLE(S=C_, data=self.data, l1=l1[i], l2=l2[j])
 		
 	index = numpy.argmin(AIC_results)
 	self.l1 = l1[ index % len(l1)]
 	self.l2 = l2[ index % len(l2)]
     
-    def fit():
-    	C = get_kern_cov(data, radius=self.h)
+    def fit(self):
+    	C = get_kern_cov(self.data, radius=self.h)
 	C_ = [None]*len(C)
 	for i in range(len(C)):
 	    C_[i] = C[i,:,:]
-	self.P, a, self.iter_, self.AIC = fitSINGLE(S=C_, l1=self.l1, l2=self.l2)
+	self.P, a, self.iter_, self.AIC = fitSINGLE(S=C_, data=self.data, l1=self.l1, l2=self.l2)
     
+    def plot(self, index, ncol_=None):
+	"""add details and code"""
+	if self.AIC==None:
+	    raise Exception("First need to fit model using fit() function")
+	plotSINGLE(self.P, ii=index, ncol_=ncol_) 
 	
     
     

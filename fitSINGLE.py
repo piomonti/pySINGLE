@@ -1,17 +1,18 @@
 ## For given values of lambda1 and lambda2 we minimise the SINGLE objective function and calculate AIC ##
 
-if __name__=='__main__':
-    import pandas
-    import math
-    import numpy
-    import os
-    import spams
+
+import pandas
+import math
+import numpy
+import os
+import spams
     
     
-def fitSINGLE(S, l1, l2, obs=1, rho=1, max_iter=50, tol=0.001):
+def fitSINGLE(S, data, l1, l2, obs=1, rho=1, max_iter=50, tol=0.001):
     """Solves SIGL for given covariance estimates S
     Input:
 	- S = covariance matricies. S is a list where S[i] is the estimate of the covariance at time i
+	- data: data array, used to fit AIC
 	- l1 and l2 are the penalties in the SINGLE cost function
     Output:
 	- Z = a list where Z[i] is an esitmate of the precision at time i"""
@@ -143,7 +144,7 @@ def get_aic(data, P):
 	for j in range(i+1, ncol_):
 	    param_no += len(numpy.unique(P[:,i,j]))
 
-    LL_est = LLaic(data, P=Z)
+    LL_est = LLaic(data, P=P)
     return 2*(param_no - LL_est)
     
     
