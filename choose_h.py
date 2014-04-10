@@ -20,8 +20,11 @@ def choose_h(data, rad_list, samples=None):
     if samples==None:
 	samples = range(1,data.shape[0])
     
-    if 0 in samples:
-	samples.pop(samples.index(0))
+    for x in range(data.shape[1]):
+	if x in samples:
+	    samples.pop(samples.index(x))
+	if data.shape[1]-x in samples:
+	    samples.pop(samples.index(data.shape[1]-x))
 
     results = [ CV_LL(data, radius=x, samples=samples) for x in rad_list]
     
