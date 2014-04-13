@@ -45,7 +45,7 @@ S.fit()
 S.plot(index=[1,2,6,7], ncol_=2) 
 
 ```
-![alt text](https://github.com/piomonti/pySINGLE/blob/master/sample_pic.png "Example of plot from SINGLE algorithm")
+![alt text](https://raw.githubusercontent.com/piomonti/pySINGLE/master/sample_pic.png "Example of plot from SINGLE algorithm")
 
 
 #### To do:
