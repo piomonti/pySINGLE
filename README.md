@@ -9,8 +9,7 @@ Requires the following (non-standard) python modules:
 
 
 #### Notes:
-All functions can be called through an instance of the `SINGLE` class (see below for details)
-This class contains four main functions:
+The `SINGLE` class has the following methods (see example below):
 
 1. `fit_radius`: this is used to estimate the radius of the Gaussian kernel, h.
 2. `tune_params`: this function is used to estimate sparsity, l1, and temporal homogeneity, l2, parameters
