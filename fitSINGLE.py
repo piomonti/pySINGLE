@@ -7,9 +7,10 @@ import numpy
 import os
 import spams
 from scipy.linalg import solveh_banded
+import multiprocessing
 
     
-def fitSINGLE(S, data, l1, l2, pen_type=1, obs=1, rho=1, max_iter=50, tol=0.001):
+def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50, tol=0.001):
     """Solves SIGL for given covariance estimates S
     Input:
 	- S = covariance matricies. S is a list where S[i] is the estimate of the covariance at time i
@@ -32,9 +33,34 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, obs=1, rho=1, max_iter=50, tol=0.001)
     while (convergence==False) & (iter_ < max_iter):
 	# Theta update:
 	A = [0.]*len(S)
-	for i in range(len(S)):
-	    theta[i] = minimize_theta(S_ = S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i], rho=rho, obs=obs[i] )
-	    A[i] = theta[i] + U[i] # will be used in Z update step
+	
+	if parallel==1:
+	    print "Theta step in parallel!"
+	    inputs = [S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i] for i in range(len(S))]
+	
+	    pool_size = multiprocessing.cpu_count() - 1
+	    pool = multiprocessing.Pool(processes=pool_size, maxtasksperchild=5)
+	    theta = pool.map(minimize_theta, inputs)
+	    
+	    pool.close()
+	    pool.join()
+	    
+	    #jobs = []
+	    #p = Process(target=minimize_theta, args=(S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i],))
+	    #jobs.append(p)
+	    #p.start()
+	
+	    #xr = range(len(S))
+	    #pool = Pool()
+	    #theta = pool.map(minimize_theta_parallel, xr)
+	    
+	    for i in range(len(S)):
+		A[i] = theta[i] + U[i]
+	    
+	else:
+	    for i in range(len(S)):
+		theta[i] = minimize_theta(S_ = S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i], rho=rho, obs=obs[i] )
+		A[i] = theta[i] + U[i] # will be used in Z update step
 	# Z update:
 	if pen_type==1:
 	    Z = minimize_Z_fused(A, l1=l1, l2=l2, rho=rho)
@@ -74,6 +100,16 @@ def minimize_theta(S_, rho=1, obs=1):
     return numpy.dot(numpy.dot(V, D_), V.T)
 	
 
+def minimize_theta_parallel(i):
+    """Parallelized implementation of theta minimisation step"""
+    
+    D, V = numpy.linalg.eig(S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i])
+    
+    D_ = numpy.identity(len(D)) * [obs[i]/(2. * rho) * (-x + math.sqrt(x*x + 4.*rho/obs[i])) for x in D]
+    
+    return numpy.dot(numpy.dot(V, D_), V.T)
+    
+	
 def minimize_Z_fused(A, l1, l2, rho):
     """2nd step: Minimize Z step of the ADMM algorithm for solving SIGL
     input:
