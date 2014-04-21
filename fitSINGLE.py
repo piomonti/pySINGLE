@@ -6,9 +6,10 @@ import math
 import numpy
 import os
 import spams
+from scipy.linalg import solveh_banded
+
     
-    
-def fitSINGLE(S, data, l1, l2, obs=1, rho=1, max_iter=50, tol=0.001):
+def fitSINGLE(S, data, l1, l2, pen_type=1, obs=1, rho=1, max_iter=50, tol=0.001):
     """Solves SIGL for given covariance estimates S
     Input:
 	- S = covariance matricies. S is a list where S[i] is the estimate of the covariance at time i
@@ -35,7 +36,10 @@ def fitSINGLE(S, data, l1, l2, obs=1, rho=1, max_iter=50, tol=0.001):
 	    theta[i] = minimize_theta(S_ = S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i], rho=rho, obs=obs[i] )
 	    A[i] = theta[i] + U[i] # will be used in Z update step
 	# Z update:
-	Z = minimize_Z_fused(A, l1=l1, l2=l2, rho=rho)
+	if pen_type==1:
+	    Z = minimize_Z_fused(A, l1=l1, l2=l2, rho=rho)
+	else:
+	    Z = minimize_Z_EL(A, l1=l1, l2=l2, rho=rho)
 	
 	# U update:
 	for i in range(len(S)):
@@ -108,6 +112,45 @@ def minimize_Z_fused(A, l1, l2, rho):
 	
     return Z_
 	
+
+	
+def minimize_Z_EL(A, l1, l2, rho):
+    """2nd step: Minimize Z step of the ADMM algorithm for solving SIGL
+    input:
+	- A is a list such that A[i] = theta[i] + U[i]
+    outout:
+	- new update of Z (ie a list)"""
+    
+    # build banded matrix:
+    n = len(A)
+    Bmat = numpy.zeros((2,n))
+    Bmat[0,:] = -2*l2/rho
+    Bmat[1,1:n-1] = 1 +4*l2/rho
+    Bmat[1,0] = Bmat[1,n-1] = 1 + 2*l2/rho
+    
+    # convert A into an array:
+    A_ = numpy.zeros((len(A), A[0].shape[0], A[0].shape[0]))
+    for i in range(len(A)):
+	A_[i,:,:] = A[i]
+    
+    sudoZ = A_[:]
+    for i in range(A[0].shape[0]):
+	for j in range(i, A[0].shape[0]):
+	    resp = A_[:,i,j]
+	    beta_hat = solveh_banded(Bmat, resp, overwrite_ab=True, overwrite_b=True)
+	    
+	    # apply soft thresholding:
+	    beta_hat = [math.copysign(1,x) * max(0, abs(x)-l1) for x in beta_hat]
+	    
+	    sudoZ[:,i,j] = beta_hat
+	    sudoZ[:,j,i] = beta_hat
+
+    # return to a list (terribly inefficient! I have to change this!)
+    Z_ = [None] * len(A)
+    for i in range(len(A)):
+	Z_[i] = sudoZ[i,:,:]
+	
+    return Z_	
 	
 def check_conv(theta, Z, Zold, tol):
     """Check convergence of the ADMM algorithm"""
