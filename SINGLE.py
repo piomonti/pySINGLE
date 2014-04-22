@@ -13,14 +13,22 @@ import spams
 class SINGLE():
     '''Class for SINGLE objects
     
-    Add more details here
-    
+    INPUT:
+        - data: numpy array of multivariate data
+        - h: radius of Gaussian kernel - can be empty in which case it will be estimated using cross validation
+        - pen_type: for smoothness/temporal homogeneity penalty. 1=Fused Lasso, 0=Elastic Fused Lasso (squared difference). Use pen_type=0 for faster computational speed
+        - parallel: run code in parallel. 1=yes, 0=no (run serially). 
+        - l1, l2: penalty coefficients for sparsity and temporal homogeneity respectively. Can be empty and will be estimated using AIC
+        - tol: convergence tolerance
+        - max_iter: maximum number of iterations
+        
     '''
     
-    def __init__(self, data, h=None, pen_type=1, l1=None, l2=None, tol=0.001, max_iter=100):
+    def __init__(self, data, h=None, pen_type=1, parallel=0, l1=None, l2=None, tol=0.001, max_iter=100):
 	self.data = data
 	self.h = h
 	self.pen_type = pen_type
+	self.parallel = parallel
 	self.l1 = l1
 	self.l2 = l2
 	self.C_ = None
@@ -43,7 +51,7 @@ class SINGLE():
 	
     def fit_radius(self, h_vals, samples):
 	"""Estimate radius of Gaussian kernel using cross-validation"""
-	self.h = choose_h(data=self.data, rad_list=h_vals, samples=samples)
+	self.h = choose_h(data=self.data, rad_list=h_vals, samples=samples, parallel=self.parallel)
 	# function to choose h (kernel width)
 	
     def est_S(self):
@@ -62,20 +70,15 @@ class SINGLE():
 	if l1==None:
 	    l1 = numpy.linspace(numpy.percentile(abs(self.data), 25), numpy.percentile(abs(self.data), 50), 4)
 	if l2==None:
-	    l2 = numpy.linspace(.1, .5, 5)
+	    l2 = numpy.linspace(.1, .5, 3)
 	if self.h==None:
 	    raise Exception("Need to either provide Gaussian kernel radius, h, or estimate this using the fit_radius method")
-	
-	#C = get_kern_cov(self.data, radius=self.h)
-	#C_ = [None]*len(C)
-	#for i in range(len(C)):
-	    #C_[i] = C[i,:,:]
 	if self.C_==None:
 	    self.est_S()
 	AIC_results = numpy.zeros((len(l1),len(l2)))
 	for i in range(len(l1)):
 	    for j in range(len(l2)):
-		a,b,c,AIC_results[i,j] = fitSINGLE(S=self.C_, data=self.data, l1=l1[i], l2=l2[j], pen_type=self.pen_type)
+		a,b,c,AIC_results[i,j] = fitSINGLE(S=self.C_, data=self.data, l1=l1[i], l2=l2[j], pen_type=self.pen_type, parallel=self.parallel)
 		
 	index = numpy.argmin(AIC_results)
 	self.l1 = l1[ index % len(l1)]
@@ -88,7 +91,7 @@ class SINGLE():
 	    #C_[i] = C[i,:,:]
 	if self.C_==None:
 	    self.est_S()
-	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type)
+	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel)
     
     def plot(self, index, ncol_=None):
 	"""add details and code"""

@@ -5,9 +5,11 @@
 import pandas
 import math
 import numpy
+import multiprocessing
+from operator import add, sub
+from itertools import repeat
 
-
-def choose_h(data, rad_list, samples=None):
+def choose_h(data, rad_list, samples=None, parallel=0):
     """function to choose best performing value of h based on LOO cross validation
     
     Input:
@@ -26,7 +28,12 @@ def choose_h(data, rad_list, samples=None):
 	if data.shape[1]-x in samples:
 	    samples.pop(samples.index(data.shape[1]-x))
 
-    results = [ CV_LL(data, radius=x, samples=samples) for x in rad_list]
+    if parallel==1:
+	pool_size = multiprocessing.cpu_count()
+	pool = multiprocessing.Pool(processes=pool_size)
+	results = pool.map(CV_LL_parallel, zip(repeat(data), rad_list, repeat(samples)))
+    else:
+	results = [ CV_LL(data, radius=x, samples=samples) for x in rad_list]
     
     return rad_list[results.index(max(results))]
     
@@ -45,6 +52,21 @@ def CV_LL(data, radius, samples=-1):
     CV_log_lik = [ estLL(data, ID=x, radius=radius, mean_=mean_) for x in samples]
     
     return sum(CV_log_lik)
+    
+def CV_LL_parallel((data, radius, samples)):
+    """Cross-validate likelihood for a given radius - code has been amended slighty to allow for parallel implementation (just added some parentisis)
+    
+    samples can be used to provide a subset of the data (index over time) in order to reduce computational cost
+    e.g., samples = range(50, 100)
+    If samples is not provided, all observations will be used - this can be computationally expensive"""
+    
+    if samples==-1:
+	samples = range(data.shape[0])
+
+    mean_ = get_kern_mean(data, radius=radius) # needed to center data in order to estimate covariance
+    CV_log_lik = [ estLL(data, ID=x, radius=radius, mean_=mean_) for x in samples]
+    
+    return sum(CV_log_lik)    
     
 def estLL(data, ID, radius, mean_):
     """Estimate Log likelihood at a given index (ID) for a given radius"""

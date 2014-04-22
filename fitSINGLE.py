@@ -42,7 +42,7 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50
 	A = [0.]*len(S)
 	
 	if parallel==1:
-	    print "Theta step in parallel!"
+	    #print "Theta step in parallel!"
 	    inputs = [S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i] for i in range(len(S))]
 	
 	    #pool_size = multiprocessing.cpu_count() - 1
