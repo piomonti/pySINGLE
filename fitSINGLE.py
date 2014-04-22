@@ -108,16 +108,6 @@ def minimize_theta(S_, rho=1, obs=1):
 
     return numpy.dot(numpy.dot(V, D_), V.T)
 	
-
-def minimize_theta_parallel(i):
-    """Parallelized implementation of theta minimisation step"""
-    
-    D, V = numpy.linalg.eig(S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i])
-    
-    D_ = numpy.identity(len(D)) * [obs[i]/(2. * rho) * (-x + math.sqrt(x*x + 4.*rho/obs[i])) for x in D]
-    
-    return numpy.dot(numpy.dot(V, D_), V.T)
-    
 	
 def minimize_Z_fused(A, l1, l2, rho):
     """2nd step: Minimize Z step of the ADMM algorithm for solving SIGL
