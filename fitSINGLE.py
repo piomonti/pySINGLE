@@ -8,6 +8,7 @@ import os
 import spams
 from scipy.linalg import solveh_banded
 import multiprocessing
+from operator import add, sub
 
     
 def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50, tol=0.001):
@@ -30,6 +31,12 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50
 	obs = [1.]*len(S)
     
     # run ADMM algorithm:
+    
+    if parallel==1:
+	# initialise pool - only do this once!
+	pool_size = multiprocessing.cpu_count()
+	pool = multiprocessing.Pool(processes=pool_size)
+    
     while (convergence==False) & (iter_ < max_iter):
 	# Theta update:
 	A = [0.]*len(S)
@@ -38,12 +45,12 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50
 	    print "Theta step in parallel!"
 	    inputs = [S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i] for i in range(len(S))]
 	
-	    pool_size = multiprocessing.cpu_count() - 1
-	    pool = multiprocessing.Pool(processes=pool_size, maxtasksperchild=5)
+	    #pool_size = multiprocessing.cpu_count() - 1
+	    #pool = multiprocessing.Pool(processes=pool_size, maxtasksperchild=5)
 	    theta = pool.map(minimize_theta, inputs)
 	    
-	    pool.close()
-	    pool.join()
+	    #pool.close()
+	    #pool.join()
 	    
 	    #jobs = []
 	    #p = Process(target=minimize_theta, args=(S[i] - (rho/obs[i]) *Z[i] + (rho/obs[i])*U[i],))
@@ -54,8 +61,10 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50
 	    #pool = Pool()
 	    #theta = pool.map(minimize_theta_parallel, xr)
 	    
-	    for i in range(len(S)):
-		A[i] = theta[i] + U[i]
+	    A = map(add, theta, U) # used in Z update step
+	    
+	    #for i in range(len(S)):
+		#A[i] = theta[i] + U[i]
 	    
 	else:
 	    for i in range(len(S)):
