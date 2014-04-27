@@ -91,7 +91,7 @@ class SINGLE():
 	    #C_[i] = C[i,:,:]
 	if self.C_==None:
 	    self.est_S()
-	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel)
+	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel, max_iter=self.max_iter, tol=self.tol)
     
     def plot(self, index, ncol_=None):
 	"""add details and code"""
