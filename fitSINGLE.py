@@ -74,7 +74,7 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50
 	if pen_type==1:
 	    Z = minimize_Z_fused(A, l1=l1, l2=l2, rho=rho)
 	else:
-	    Z = minimize_Z_EL(A, l1=l1, l2=l2, rho=rho)
+	    Z = minimize_Z_EL2(A, l1=l1, l2=l2, rho=rho)
 	
 	# U update:
 	for i in range(len(S)):
@@ -186,7 +186,90 @@ def minimize_Z_EL(A, l1, l2, rho):
 	Z_[i] = sudoZ[i,:,:]
 	
     return Z_	
+
+def minimize_Z_EL2(A, l1, l2, rho):
+    """"""
+    
+        # build banded matrix:
+    n = len(A)
+    Bmat = numpy.zeros((2,n))
+    Bmat[0,:] = -2*l2/rho
+    Bmat[1,1:n-1] = 1 +4*l2/rho
+    Bmat[1,0] = Bmat[1,n-1] = 1 + 2*l2/rho
+    
+    # convert A into an array:
+    A_ = numpy.zeros((len(A), A[0].shape[0], A[0].shape[0]))
+    for i in range(len(A)):
+	A_[i,:,:] = A[i]
+    
+    sudoZ = A_[:]
+    for i in range(A[0].shape[0]):
+	for j in range(i, A[0].shape[0]):
+	    resp = A_[:,i,j]
+	    # get LS solution:
+	    beta_hat = solveh_banded(Bmat, resp, overwrite_ab=True, overwrite_b=True)
+	    
+	    # shooting algorithm:
+	    beta_hat = Z_shooting(B=beta_hat, y=resp, l1=l1, l2=l2)
+	    
+	    sudoZ[:,i,j] = beta_hat
+	    sudoZ[:,j,i] = beta_hat
+
+    # return to a list (terribly inefficient! I have to change this!)
+    Z_ = [None] * len(A)
+    for i in range(len(A)):
+	Z_[i] = sudoZ[i,:,:]
 	
+    return Z_	
+    
+
+    
+def softThres(x, l1):
+    """Soft thresholding function"""
+    
+    return math.copysign(1,x) * max(0, abs(x)-l1)
+
+stVec = numpy.vectorize(softThres)    
+    
+    
+def Z_shooting(B, y, l1, l2, tol=.01, max_iter=5):
+    """Shooting algorithm for Z approximation step
+    
+    INPUT:
+	 - B: intial estimate for coefficients (eg LS estimate)
+	 - y: actual time series
+	 - l1, l2: penalty terms
+    
+    OUTPUT:
+	 - sparse & smoothened B coefficients
+    
+    """
+    
+    Bold = B[:]
+    convergence = False
+    iter_ = 0
+    
+    norm_ = numpy.ones(len(B))*(1+4*l2)
+    norm_[0] = norm_[-1] = (1+2*l2)
+    
+    while (convergence==False) & (iter_ < max_iter):
+	Bmin1 = numpy.insert(B[:-1], 0,0)
+	Bplus1 = numpy.insert(B[1:], len(B)-1,0)
+	
+	B = stVec(y+2*l2*(Bmin1+Bplus1), l1)/norm_
+	
+	#B = [math.copysign(1,x) * max(0, abs(x)-l1) for x in y+2*l2*(Bmin1+Bplus1)]
+	
+	if abs(Bold-B).sum()<tol:
+	    convergence=True
+	else:
+	    Bold = B[:]
+	    iter_ +=1
+	    #print iter_
+    
+    return B
+    
+    
 def check_conv(theta, Z, Zold, tol):
     """Check convergence of the ADMM algorithm"""
     cond1 = True
