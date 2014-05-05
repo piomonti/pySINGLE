@@ -32,6 +32,9 @@ def choose_h(data, rad_list, samples=None, parallel=0):
 	pool_size = multiprocessing.cpu_count()
 	pool = multiprocessing.Pool(processes=pool_size)
 	results = pool.map(CV_LL_parallel, zip(repeat(data), rad_list, repeat(samples)))
+	pool.close()
+	pool.join()
+	
     else:
 	results = [ CV_LL(data, radius=x, samples=samples) for x in rad_list]
     

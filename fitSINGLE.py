@@ -122,7 +122,12 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50
 	#print iter_
 	#if convergence:
 	#    print 'CONVERGED HURRAH'
-
+    
+    # clean up:
+    if parallel==1:
+	pool.close()
+	pool.join()
+    
     # calculate AIC
     ncol_ = data.shape[1]
     Z = numpy.array(Z).reshape(data.shape[0], ncol_, ncol_)
@@ -241,7 +246,6 @@ def minimize_Z_EL_parallel(resp, Bmat, l1, l2):
 def Z_parallel_helper(args):
     return minimize_Z_EL_parallel(*args)
 
-    
     
 def minimize_Z_EL2(A, l1, l2, rho):
     """"""
