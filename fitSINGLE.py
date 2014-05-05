@@ -9,6 +9,7 @@ import spams
 from scipy.linalg import solveh_banded
 import multiprocessing
 from operator import add, sub
+import itertools
 
     
 def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50, tol=0.001):
@@ -74,7 +75,41 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50
 	if pen_type==1:
 	    Z = minimize_Z_fused(A, l1=l1, l2=l2, rho=rho)
 	else:
-	    Z = minimize_Z_EL2(A, l1=l1, l2=l2, rho=rho)
+	    if parallel==1:
+		# prepare input:
+		p = A[0].shape[0]
+		# prepare tridogonal problem which we will solve effciently using solveh_banded:
+		n = len(A)
+		Bmat = numpy.zeros((2,n))
+		Bmat[0,:] = -2.*l2/rho
+		Bmat[1,1:n-1] = 1 +4.*l2/rho
+		Bmat[1,0] = Bmat[1,n-1] = 1 + 2.*l2/rho
+		
+		# convert A into an array:
+		A_ = numpy.zeros((len(A), A[0].shape[0], A[0].shape[0]))
+		for i in range(len(A)):
+		    A_[i,:,:] = A[i]
+		
+		Zinputs = [A_[:,i,j] for i in range(p) for j in range(i,p)]
+		sudoZ = pool.map(Z_parallel_helper, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1), itertools.repeat(l2)))
+		#print "Z step succesfully done in parallel MUTHAFUKA!!"
+		
+		# now I need to put it back together!
+		Zarray = numpy.zeros((len(A), A[0].shape[0], A[0].shape[0]))
+		counter = 0
+		for i in range(p):
+		    for j in range(i,p):
+			Zarray[:,i,j] = sudoZ[counter]
+			Zarray[:,j,i] = sudoZ[counter]
+			counter += 1
+		
+		# put back into a list:
+		Z = [None] * len(A)
+		for i in range(len(A)):
+		    Z[i] = Zarray[i,:,:]
+		
+	    else:
+		Z = minimize_Z_EL2(A, l1=l1, l2=l2, rho=rho)
 	
 	# U update:
 	for i in range(len(S)):
@@ -186,11 +221,32 @@ def minimize_Z_EL(A, l1, l2, rho):
 	Z_[i] = sudoZ[i,:,:]
 	
     return Z_	
+    
+def minimize_Z_EL_parallel(resp, Bmat, l1, l2):
+    """Parallel implementation of Z_EL step
+    
+    INPUT:
+	  - resp: vector for (i,j) partial correlation estimates 
+	  - Bmat: tridiagonal matrix used to solve L2 problem
+	  - l1, l2, rho: penalty parameters
+    
+    """
+    
+    beta_hat = solveh_banded(Bmat, resp, overwrite_ab=True, overwrite_b=True)
+    beta_hat = Z_shooting(B=beta_hat, y=resp, l1=l1, l2=l2)
+    
+    return beta_hat
+    
+# auxiliary funciton to make it work
+def Z_parallel_helper(args):
+    return minimize_Z_EL_parallel(*args)
 
+    
+    
 def minimize_Z_EL2(A, l1, l2, rho):
     """"""
     
-        # build banded matrix:
+    # build banded matrix:
     n = len(A)
     Bmat = numpy.zeros((2,n))
     Bmat[0,:] = -2*l2/rho
