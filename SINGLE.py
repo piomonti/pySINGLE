@@ -97,6 +97,9 @@ class SINGLE():
 	    self.est_S()
 	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel, max_iter=self.max_iter, tol=self.tol)
 	# fit and normalise:
+	for i in range(len(self.P)):
+	    d = numpy.sqrt(numpy.diagonal(self.P[i,:,:]))
+	    self.P[i,:,:] /= numpy.outer(d,d)
     
     def plot(self, index, ncol_=None):
 	"""add details and code"""
