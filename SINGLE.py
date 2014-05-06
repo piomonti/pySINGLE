@@ -8,7 +8,6 @@ from fitSINGLE import *
 from plotSINGLE import plotSINGLE
 
 import numpy
-import spams
 
 class SINGLE():
     '''Class for SINGLE objects
@@ -24,11 +23,11 @@ class SINGLE():
         
     '''
     
-    def __init__(self, data, h=None, pen_type=1, parallel=0, l1=None, l2=None, tol=0.001, max_iter=100):
+    def __init__(self, data, h=None, pen_type="Fused", parallel=True, l1=None, l2=None, tol=0.001, max_iter=100):
 	self.data = data
 	self.h = h
-	self.pen_type = pen_type
-	self.parallel = parallel
+	self.pen_type = int(pen_type=="Fused")
+	self.parallel = int(parallel==True)
 	self.l1 = l1
 	self.l2 = l2
 	self.C_ = None
@@ -37,6 +36,9 @@ class SINGLE():
 	self.P = None # estimate precision matrices
 	self.iter_ = None
 	self.AIC = None
+	
+	if self.pen_type==1:
+	    import spams # only import if needed
 	
 	
     def __repr__(self):
@@ -47,6 +49,8 @@ class SINGLE():
 	if self.h!=None: mes += " # h:  " + str(self.h) + "\n"
 	if self.l1!=None: mes += " # l1: " + str(self.l1) + "\n"
 	if self.l2!=None: mes += " # l2: " + str(self.l2) + "\n"
+	if self.parallel==1:
+	    mes += " # Implemented using multiprocessing "
 	return mes
 	
     def fit_radius(self, h_vals, samples):
@@ -92,6 +96,7 @@ class SINGLE():
 	if self.C_==None:
 	    self.est_S()
 	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel, max_iter=self.max_iter, tol=self.tol)
+	# fit and normalise:
     
     def plot(self, index, ncol_=None):
 	"""add details and code"""
