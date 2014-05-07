@@ -3,8 +3,12 @@
 from distutils.core import setup
 
 setup(name='pySINGLE', 
-    version='1.0', 
+    packages = ['pySINGLE'],
+    version='0.1', 
     description = 'Python implementation of SINGLE algorithm',
     author = 'Ricardo Pio Monti',
     author_email = 'ricardo.monti08@gmail.com',
-    py_modules=['pySINGLE'])
+    url = 'https://github.com/piomonti/pySINGLE',
+    download_url = 'https://github.com/piomonti/pySINGLE/tarball/0.1'
+    #py_modules=['pySINGLE']
+    )
