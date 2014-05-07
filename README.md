@@ -19,7 +19,8 @@ The `SINGLE` class has the following methods (see example below):
 
 
 #### Installation:
-Can be easily installed using pip:
+Install using pip:
+
 `pip install pySINGLE`
 
 #### Example:
