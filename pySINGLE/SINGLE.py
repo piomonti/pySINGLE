@@ -18,18 +18,20 @@ class SINGLE():
         - pen_type: for smoothness/temporal homogeneity penalty. "Fused"=Fused Lasso, "Elastic"=Elastic Fused Lasso (squared difference). Use pen_type="Elastic" for faster computational speed
         - parallel: boolean indicating whether to run code in parallel. 
         - l1, l2: penalty coefficients for sparsity and temporal homogeneity respectively. Can be empty and will be estimated using AIC
+        - norm: boolean indicating whether to normalise resulting precision matrices
         - tol: convergence tolerance
         - max_iter: maximum number of iterations
         
     '''
     
-    def __init__(self, data, h=None, pen_type="Fused", parallel=True, l1=None, l2=None, tol=0.001, max_iter=100):
+    def __init__(self, data, h=None, pen_type="Fused", parallel=True, l1=None, l2=None, norm=True, tol=0.001, max_iter=100):
 	self.data = data
 	self.h = h
 	self.pen_type = int(pen_type=="Fused")
 	self.parallel = int(parallel==True)
 	self.l1 = l1
 	self.l2 = l2
+	self.norm=norm
 	self.C_ = None
 	self.tol = tol
 	self.max_iter = max_iter
@@ -97,9 +99,10 @@ class SINGLE():
 	    self.est_S()
 	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel, max_iter=self.max_iter, tol=self.tol)
 	# fit and normalise:
-	for i in range(len(self.P)):
-	    d = numpy.sqrt(numpy.diagonal(self.P[i,:,:]))
-	    self.P[i,:,:] /= numpy.outer(d,d)
+	if self.norm:
+	    for i in range(len(self.P)):
+		d = numpy.sqrt(numpy.diagonal(self.P[i,:,:]))
+		self.P[i,:,:] /= numpy.outer(d,d)
     
     def plot(self, index, ncol_=None):
 	"""add details and code"""

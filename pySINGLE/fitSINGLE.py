@@ -292,7 +292,7 @@ def softThres(x, l1):
 stVec = numpy.vectorize(softThres)    
     
     
-def Z_shooting(B, y, l1, l2, tol=.01, max_iter=5):
+def Z_shooting(B, y, l1, l2, tol=.01, max_iter=50):
     """Shooting algorithm for Z approximation step
     
     INPUT:
