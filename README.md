@@ -17,6 +17,12 @@ The `SINGLE` class has the following methods (see example below):
 4. `plot`: used to plot resulting partial correlations
 
 
+
+#### Installation:
+Install using pip:
+
+`pip install pySINGLE`
+
 #### Example:
 We provide simulated data in the `Sample Data` folder. 
 
