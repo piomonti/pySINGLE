@@ -24,13 +24,14 @@ class SINGLE():
         
     '''
     
-    def __init__(self, data, h=None, pen_type="Fused", parallel=True, l1=None, l2=None, norm=True, tol=0.001, max_iter=100):
+    def __init__(self, data, h=None, pen_type="Fused", parallel=True, l1=None, l2=None, Approx=True, norm=True, tol=0.001, max_iter=100):
 	self.data = data
 	self.h = h
 	self.pen_type = int(pen_type=="Fused")
 	self.parallel = int(parallel==True)
 	self.l1 = l1
 	self.l2 = l2
+	self.Approx = Approx
 	self.norm=norm
 	self.C_ = None
 	self.tol = tol
@@ -97,7 +98,7 @@ class SINGLE():
 	    #C_[i] = C[i,:,:]
 	if self.C_==None:
 	    self.est_S()
-	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel, max_iter=self.max_iter, tol=self.tol)
+	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel, Approx=self.Approx, max_iter=self.max_iter, tol=self.tol)
 	# fit and normalise:
 	if self.norm:
 	    for i in range(len(self.P)):

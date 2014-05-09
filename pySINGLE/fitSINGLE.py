@@ -12,12 +12,14 @@ from operator import add, sub
 import itertools
 
     
-def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50, tol=0.001):
+def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, Approx=True, obs=1, rho=1., max_iter=50, tol=0.001):
     """Solves SIGL for given covariance estimates S
     Input:
 	- S = covariance matricies. S is a list where S[i] is the estimate of the covariance at time i
 	- data: data array, used to fit AIC
 	- l1 and l2 are the penalties in the SINGLE cost function
+	- parallel: run in parallel (multiprocessing)
+	- Approx: use approximation
     Output:
 	- Z = a list where Z[i] is an esitmate of the precision at time i"""
     
@@ -91,7 +93,13 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, obs=1, rho=1, max_iter=50
 		    A_[i,:,:] = A[i]
 		
 		Zinputs = [A_[:,i,j] for i in range(p) for j in range(i,p)]
-		sudoZ = pool.map(Z_parallel_helper, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1), itertools.repeat(l2)))
+		#sudoZ = pool.map(Z_parallel_helper_Approx, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1)))
+		if Approx:
+		    sudoZ = pool.map(Z_parallel_helper_Approx, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1)))
+		else:
+		    sudoZ = pool.map(Z_parallel_helper, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1), itertools.repeat(l2)))
+		
+		#sudoZ = pool.map(Z_parallel_helper, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1), itertools.repeat(l2)))
 		#print "Z step succesfully done in parallel MUTHAFUKA!!"
 		
 		# now I need to put it back together!
@@ -192,7 +200,7 @@ def minimize_Z_fused(A, l1, l2, rho):
 def minimize_Z_EL(A, l1, l2, rho):
     """2nd step: Minimize Z step of the ADMM algorithm for solving SIGL
     input:
-	- A is a list such that A[i] = theta[i] + U[i]
+	- A is a list such that A[i] = thetaZ_parallel_helper_Approx[i] + U[i]
     outout:
 	- new update of Z (ie a list)"""
     
@@ -246,6 +254,23 @@ def minimize_Z_EL_parallel(resp, Bmat, l1, l2):
 def Z_parallel_helper(args):
     return minimize_Z_EL_parallel(*args)
 
+
+def minimize_Z_EL_parallel_Approx(resp, Bmat, l1):
+    """Parallel implementation of Z_EL step
+    
+    INPUT:
+	  - resp: vector for (i,j) partial correlation estimates 
+	  - Bmat: tridiagonal matrix used to solve L2 problem
+	  - l1, l2, rho: penalty parameters
+    
+    """
+    
+    beta_hat = stVec(solveh_banded(Bmat, resp, overwrite_ab=True, overwrite_b=True), l1)
+    
+    return beta_hat    
+    
+def Z_parallel_helper_Approx(args):
+    return minimize_Z_EL_parallel_Approx(*args)
     
 def minimize_Z_EL2(A, l1, l2, rho):
     """"""
@@ -305,25 +330,35 @@ def Z_shooting(B, y, l1, l2, tol=.01, max_iter=5):
     
     """
     
-    Bold = B[:]
+    Bold = numpy.copy(B)
     convergence = False
     iter_ = 0
     
     norm_ = numpy.ones(len(B))*(1+4*l2)
     norm_[0] = norm_[-1] = (1+2*l2)
+    n = len(B)
     
     while (convergence==False) & (iter_ < max_iter):
-	Bmin1 = numpy.insert(B[:-1], 0,0)
-	Bplus1 = numpy.insert(B[1:], len(B)-1,0)
+	# need to iterate through each entry:
+	for i in range(len(B)):
+	    if i==0:
+		B[i] = softThres( y[i] + 2.*l2*(  B[i+1] ), l1)/norm_[i]
+	    elif i== n-1:
+		B[i] = softThres( y[i] + 2.*l2*(  B[i-1] ), l1)/norm_[i]
+	    else:
+		B[i] = softThres( y[i] + 2.*l2*( B[i-1] + B[i+1] ), l1)/norm_[i]
+    
+	#Bmin1 = numpy.insert(B[:-1], 0,0)
+	#Bplus1 = numpy.insert(B[1:], len(B)-1,0)
 	
-	B = stVec(y+2*l2*(Bmin1+Bplus1), l1)/norm_
+	#B = stVec(y+2*l2*(Bmin1+Bplus1), l1)/norm_
 	
 	#B = [math.copysign(1,x) * max(0, abs(x)-l1) for x in y+2*l2*(Bmin1+Bplus1)]
 	
-	if abs(Bold-B).sum()<tol:
+	if numpy.sum(abs(Bold-B))<tol:
 	    convergence=True
 	else:
-	    Bold = B[:]
+	    Bold = numpy.copy(B)
 	    iter_ +=1
 	    #print iter_
     
