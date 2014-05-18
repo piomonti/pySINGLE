@@ -24,7 +24,7 @@ class SINGLE():
         
     '''
     
-    def __init__(self, data, h=None, pen_type="Fused", parallel=True, l1=None, l2=None, Approx=True, norm=True, tol=0.001, max_iter=100):
+    def __init__(self, data, h=None, pen_type="Fused", parallel=True, l1=None, l2=None, Approx=False, norm=True, tol=0.001, max_iter=100):
 	self.data = data
 	self.h = h
 	self.pen_type = int(pen_type=="Fused")

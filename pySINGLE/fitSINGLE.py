@@ -10,9 +10,10 @@ from scipy.linalg import solveh_banded
 import multiprocessing
 from operator import add, sub
 import itertools
+import Z_shooting
 
     
-def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, Approx=True, obs=1, rho=1., max_iter=50, tol=0.001):
+def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, Approx=False, obs=1, rho=1., max_iter=50, tol=0.001, C=1):
     """Solves SIGL for given covariance estimates S
     Input:
 	- S = covariance matricies. S is a list where S[i] is the estimate of the covariance at time i
@@ -97,7 +98,11 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, Approx=True, obs=1, rho=1
 		if Approx:
 		    sudoZ = pool.map(Z_parallel_helper_Approx, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1)))
 		else:
-		    sudoZ = pool.map(Z_parallel_helper, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1), itertools.repeat(l2)))
+		    if C==0:
+			sudoZ = pool.map(Z_parallel_helper, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1), itertools.repeat(l2))) # cython free implementation
+		    else:
+			sudoZ = pool.map(Z_parallel_helper_cython, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1), itertools.repeat(l2))) # cython implementation
+			#print "cython multiprocessing!!"
 		
 		#sudoZ = pool.map(Z_parallel_helper, itertools.izip(Zinputs, itertools.repeat(Bmat), itertools.repeat(l1), itertools.repeat(l2)))
 		#print "Z step succesfully done in parallel MUTHAFUKA!!"
@@ -117,7 +122,10 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, Approx=True, obs=1, rho=1
 		    Z[i] = Zarray[i,:,:]
 		
 	    else:
-		Z = minimize_Z_EL2(A, l1=l1, l2=l2, rho=rho)
+		if C==0:
+		    Z = minimize_Z_EL2(A, l1=l1, l2=l2, rho=rho) # run cython free implementation
+		else:
+		    Z = minimize_Z_EL_cython(A, l1=l1, l2=l2, rho=rho) # run cython implementation
 	
 	# U update:
 	for i in range(len(S)):
@@ -246,7 +254,7 @@ def minimize_Z_EL_parallel(resp, Bmat, l1, l2):
     """
     
     beta_hat = solveh_banded(Bmat, resp, overwrite_ab=True, overwrite_b=True)
-    beta_hat = Z_shooting(B=beta_hat, y=resp, l1=l1, l2=l2)
+    beta_hat = Z_shooting_old(B=beta_hat, y=resp, l1=l1, l2=l2, tol=.01, max_iter=100)
     
     return beta_hat
     
@@ -254,6 +262,24 @@ def minimize_Z_EL_parallel(resp, Bmat, l1, l2):
 def Z_parallel_helper(args):
     return minimize_Z_EL_parallel(*args)
 
+    
+def minimize_Z_EL_parallel_cython(resp, Bmat, l1, l2):
+    """Parallel implementation of Z_EL step
+    
+    INPUT:
+	  - resp: vector for (i,j) partial correlation estimates 
+	  - Bmat: tridiagonal matrix used to solve L2 problem
+	  - l1, l2, rho: penalty parameters
+    
+    """
+    
+    beta_hat = solveh_banded(Bmat, resp, overwrite_ab=True, overwrite_b=True)
+    beta_hat = Z_shooting.Z_shooting(B=beta_hat, y=resp, l1=l1, l2=l2, tol=.1, max_iter=100)
+    
+    return beta_hat
+
+def Z_parallel_helper_cython(args):
+    return minimize_Z_EL_parallel_cython(*args)
 
 def minimize_Z_EL_parallel_Approx(resp, Bmat, l1):
     """Parallel implementation of Z_EL step
@@ -295,7 +321,7 @@ def minimize_Z_EL2(A, l1, l2, rho):
 	    beta_hat = solveh_banded(Bmat, resp, overwrite_ab=True, overwrite_b=True)
 	    
 	    # shooting algorithm:
-	    beta_hat = Z_shooting(B=beta_hat, y=resp, l1=l1, l2=l2)
+	    beta_hat = Z_shooting_old(B=beta_hat, y=resp, l1=l1, l2=l2, tol=0.01, max_iter=200)
 	    
 	    sudoZ[:,i,j] = beta_hat
 	    sudoZ[:,j,i] = beta_hat
@@ -306,8 +332,43 @@ def minimize_Z_EL2(A, l1, l2, rho):
 	Z_[i] = sudoZ[i,:,:]
 	
     return Z_	
-    
 
+    
+    
+def minimize_Z_EL_cython(A, l1, l2, rho):
+    """"""
+    
+    # build banded matrix:
+    n = len(A)
+    Bmat = numpy.zeros((2,n))
+    Bmat[0,:] = -2*l2/rho
+    Bmat[1,1:n-1] = 1 +4*l2/rho
+    Bmat[1,0] = Bmat[1,n-1] = 1 + 2*l2/rho
+    
+    # convert A into an array:
+    A_ = numpy.zeros((len(A), A[0].shape[0], A[0].shape[0]))
+    for i in range(len(A)):
+	A_[i,:,:] = A[i]
+    
+    sudoZ = A_[:]
+    for i in range(A[0].shape[0]):
+	for j in range(i, A[0].shape[0]):
+	    resp = A_[:,i,j]
+	    # get LS solution:
+	    beta_hat = solveh_banded(Bmat, resp, overwrite_ab=True, overwrite_b=True)
+	    
+	    # shooting algorithm:
+	    beta_hat = Z_shooting.Z_shooting(B=beta_hat, y=resp, l1=l1, l2=l2, tol=0.1, max_iter=100)
+	    
+	    sudoZ[:,i,j] = beta_hat
+	    sudoZ[:,j,i] = beta_hat
+
+    # return to a list (terribly inefficient! I have to change this!)
+    Z_ = [None] * len(A)
+    for i in range(len(A)):
+	Z_[i] = sudoZ[i,:,:]
+	
+    return Z_
     
 def softThres(x, l1):
     """Soft thresholding function"""
@@ -317,7 +378,7 @@ def softThres(x, l1):
 stVec = numpy.vectorize(softThres)    
     
     
-def Z_shooting(B, y, l1, l2, tol=.01, max_iter=5):
+def Z_shooting_old(B, y, l1, l2, tol=.01, max_iter=5):
     """Shooting algorithm for Z approximation step
     
     INPUT:
