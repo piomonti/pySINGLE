@@ -146,8 +146,9 @@ def fitSINGLE(S, data, l1, l2, pen_type=1, parallel=0, Approx=False, obs=1, rho=
     
     # calculate AIC
     ncol_ = data.shape[1]
-    Z = numpy.array(Z).reshape(data.shape[0], ncol_, ncol_)
-    AIC = get_aic(data, P=Z)
+    theta = numpy.array(theta).reshape(data.shape[0], ncol_, ncol_)
+    Z = numpy.array(Z).reshape(data.shape[0], ncol_, ncol_) # conver to array to make plotting etc easier
+    AIC = get_aic(data, P=theta)
 	
     return Z, convergence, iter_, AIC
 
