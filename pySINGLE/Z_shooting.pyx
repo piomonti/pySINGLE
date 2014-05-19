@@ -1,17 +1,18 @@
 # python shooting algorithm
 #
-#
+# wihtout separate softThresholding function
 
 import numpy
 #import math
 cimport numpy as np
 
 from libc.math cimport copysign as CS
+from libc.math cimport fabs as fabs
 
 cimport cython
 @cython.boundscheck(False)
 
-def Z_shooting(np.ndarray[np.float64_t, ndim=1] B, np.ndarray[np.float64_t, ndim=1] y, np.float_t l1, np.float_t l2, np.float_t tol=.01, np.int_t max_iter=5):
+def Z_shooting(np.ndarray[np.float64_t, ndim=1] B, np.ndarray[np.float64_t, ndim=1] y, np.float64_t l1, np.float64_t l2, np.float64_t tol=.01, np.int_t max_iter=5):
     """Shooting algorithm for Z approximation step
     
     INPUT:
@@ -29,6 +30,7 @@ def Z_shooting(np.ndarray[np.float64_t, ndim=1] B, np.ndarray[np.float64_t, ndim
     cdef int lenB = len(B)
     cdef int convergence = 0
     cdef np.ndarray[np.float64_t] norm_ = numpy.ones(len(B))*(1+4*l2) #numpy.empty(lenB)
+    cdef np.float64_t x
     
     Bold = numpy.copy(B)
     #convergence = False
@@ -41,21 +43,18 @@ def Z_shooting(np.ndarray[np.float64_t, ndim=1] B, np.ndarray[np.float64_t, ndim
     while (convergence==0) & (iter_ < max_iter):
         for i in xrange(lenB):
             if i==0:
-                B[i] = softThres( y[i] + 2.*l2*(  B[i+1] ), l1)/norm_[i]
+                x = y[i] + 2.*l2*(  B[i+1] )
+                B[i] = CS(1,x) * max(0, fabs(x)-l1)/norm_[i]
             elif i== n-1:
-                B[i] = softThres( y[i] + 2.*l2*(  B[i-1] ), l1)/norm_[i]
+                x = y[i] + 2.*l2*(  B[i-1] )
+                B[i] = CS(1,x) * max(0, fabs(x)-l1)/norm_[i]
             else:
-                B[i] = softThres( y[i] + 2.*l2*( B[i-1] + B[i+1] ), l1)/norm_[i]
+                x = y[i] + 2.*l2*( B[i-1] + B[i+1] )
+                B[i] = CS(1,x) * max(0, fabs(x)-l1)/norm_[i]
         if numpy.sum(abs(Bold-B))<tol:
             convergence=1
         else:
             Bold = numpy.copy(B)
             iter_ +=1
-    #print iter_
-    #print str(numpy.sum(abs(Bold-B)))
     return B 
-
-def softThres(np.float64_t x, np.float_t l1):
-    """Soft thresholding function"""
-    
-    return CS(1,x) * max(0, abs(x)-l1)
+ 
