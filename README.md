@@ -23,6 +23,10 @@ Install using pip:
 
 `pip install pySINGLE`
 
+or using easy_install:
+
+`easy_install pySINGLE`
+
 #### Example:
 We provide simulated data in the `Sample Data` folder. 
 
