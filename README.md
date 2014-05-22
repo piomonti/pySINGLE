@@ -58,4 +58,4 @@ S.plot(index=[1,2,6,7], ncol_=2)
 
 
 #### To do:
-* Optimise/parallelize code
+<del>* Optimise/parallelize code</del>
