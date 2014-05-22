@@ -57,5 +57,4 @@ S.plot(index=[1,2,6,7], ncol_=2)
 ![alt text](https://raw.githubusercontent.com/piomonti/pySINGLE/master/sample_pic.png "Example of plot from SINGLE algorithm")
 
 
-#### To do:
-<del>* Optimise/parallelize code</del>
+
