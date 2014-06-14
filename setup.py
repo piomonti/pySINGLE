@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(name='pySINGLE', 
     packages = ['pySINGLE'],
-    version='0.1', 
+    version='0.4', 
     description = 'Python implementation of SINGLE algorithm',
     author = 'Ricardo Pio Monti',
     author_email = 'ricardo.monti08@gmail.com',
