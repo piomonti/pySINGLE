@@ -6,6 +6,7 @@
 from choose_h import *
 from fitSINGLE import *
 from plotSINGLE import plotSINGLE
+#import spams
 
 import numpy
 
@@ -24,7 +25,7 @@ class SINGLE():
         
     '''
     
-    def __init__(self, data, h=None, pen_type="Fused", parallel=True, l1=None, l2=None, Approx=False, norm=True, tol=0.001, max_iter=100):
+    def __init__(self, data, h=None, parallel=True, l1=None, l2=None, norm=True, tol=0.001, max_iter=100):
 	self.data = data
 	self.h = h
 	self.pen_type = int(pen_type=="Fused")
@@ -39,16 +40,9 @@ class SINGLE():
 	self.P = None # estimate precision matrices
 	self.iter_ = None
 	self.AIC = None
-	
-	if self.pen_type==1:
-	    import spams # only import if needed
-	
-	
+		
     def __repr__(self):
-	if self.pen_type==1:
-	    mes = " ### SINGLE ###\n"
-	else:
-	    mes = " ### EL-SINGLE ###\n"
+	mes = " ### SINGLE ###\n"
 	if self.h!=None: mes += " # h:  " + str(self.h) + "\n"
 	if self.l1!=None: mes += " # l1: " + str(self.l1) + "\n"
 	if self.l2!=None: mes += " # l2: " + str(self.l2) + "\n"
@@ -85,7 +79,7 @@ class SINGLE():
 	AIC_results = numpy.zeros((len(l1),len(l2)))
 	for i in range(len(l1)):
 	    for j in range(len(l2)):
-		a,b,c,AIC_results[i,j] = fitSINGLE(S=self.C_, data=self.data, l1=l1[i], l2=l2[j], pen_type=self.pen_type, parallel=self.parallel)
+		a,b,c,AIC_results[i,j] = fitSINGLE(S=self.C_, data=self.data, l1=l1[i], l2=l2[j], parallel=self.parallel)
 		
 	index = numpy.argmin(AIC_results)
 	self.l1 = l1[ index % len(l1)]
@@ -98,7 +92,7 @@ class SINGLE():
 	    #C_[i] = C[i,:,:]
 	if self.C_==None:
 	    self.est_S()
-	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, pen_type=self.pen_type, parallel=self.parallel, Approx=self.Approx, max_iter=self.max_iter, tol=self.tol)
+	self.P, a, self.iter_, self.AIC = fitSINGLE(S=self.C_, data=self.data, l1=self.l1, l2=self.l2, parallel=self.parallel, max_iter=self.max_iter, tol=self.tol)
 	# fit and normalise:
 	if self.norm:
 	    for i in range(len(self.P)):

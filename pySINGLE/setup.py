@@ -20,6 +20,11 @@ import numpy
 
 setup(
     cmdclass = {'build_ext': build_ext},
-    ext_modules = cythonize("pySINGLE/Z_shooting.pyx"),
-    include_dirs=[numpy.get_include(),'.', ],
+    ext_modules = [Extension("FastFused_01", ["FastFused_01.pyx"], include_dirs=[numpy.get_include()])]
 )
+
+#setup(
+    #cmdclass = {'build_ext': build_ext},
+    #ext_modules = cythonize("FastFused_01.pyx"),
+    #include_dirs=[numpy.get_include(),'.', ],
+#)

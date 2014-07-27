@@ -16,7 +16,7 @@ setup(name='pySINGLE',
     author_email = 'ricardo.monti08@gmail.com',
     url = 'https://github.com/piomonti/pySINGLE',
     download_url = 'https://github.com/piomonti/pySINGLE/tarball/0.1',
-    cmdclass = {'build_ext': build_ext},
-    ext_modules = [Extension("Z_shooting", ['pySINGLE/Z_shooting.c'])],
-    include_dirs=[numpy.get_include(),'.', ]
+    #cmdclass = {'build_ext': build_ext},
+    #ext_modules = [Extension("Z_shooting", ['pySINGLE/Z_shooting.c'])],
+    #include_dirs=[numpy.get_include(),'.', ]
 )
