@@ -1,7 +1,7 @@
 ## For given values of lambda1 and lambda2 we minimise the SINGLE objective function and calculate AIC ##
 
 
-import pandas
+#import pandas
 import math
 import numpy
 import os
