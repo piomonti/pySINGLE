@@ -4,10 +4,6 @@ pySINGLE
 Python implementation of SINGLE algorithm. Full details can be found [here]
 (http://arxiv.org/pdf/1310.3863.pdf) or alternatively [here] (http://mirrors.softliste.de/cran/web/packages/SINGLE/vignettes/vignette.pdf)
 
-Requires the following (non-standard) python modules:
-* spams: an optimization toolbox for solving various sparse estimation problems. Details can be found [here] (http://spams-devel.gforge.inria.fr/)
-
-
 #### Notes:
 The `SINGLE` class has the following methods (see example below):
 
