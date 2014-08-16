@@ -76,6 +76,7 @@ class SINGLE():
 	AIC_results = numpy.zeros((len(l1),len(l2)))
 	for i in range(len(l1)):
 	    for j in range(len(l2)):
+	    	print "Fitting for l1: " + str(l1[i]) + " and l2: " + str(l2[j])
 		a,b,c,AIC_results[i,j] = fitSINGLE(S=self.C_, data=self.data, l1=l1[i], l2=l2[j], parallel=self.parallel)
 		
 	index = numpy.argmin(AIC_results)
