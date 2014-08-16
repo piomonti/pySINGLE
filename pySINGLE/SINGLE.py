@@ -30,7 +30,6 @@ class SINGLE():
 	self.parallel = int(parallel==True)
 	self.l1 = l1
 	self.l2 = l2
-	self.Approx = Approx
 	self.norm=norm
 	self.C_ = None
 	self.tol = tol
