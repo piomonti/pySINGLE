@@ -2,7 +2,7 @@ pySINGLE
 --------
 
 Python implementation of SINGLE algorithm. Full details can be found [here]
-(http://arxiv.org/pdf/1310.3863.pdf) or alternatively [here] (http://mirrors.softliste.de/cran/web/packages/SINGLE/vignettes/vignette.pdf)
+(http://www.sciencedirect.com/science/article/pii/S1053811914006168) or alternatively [here] (http://mirrors.softliste.de/cran/web/packages/SINGLE/vignettes/vignette.pdf)
 
 #### Notes:
 The `SINGLE` class has the following methods (see example below):
