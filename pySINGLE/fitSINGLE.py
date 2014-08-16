@@ -100,7 +100,7 @@ def fitSINGLE(S, data, l1, l2, parallel=0, obs=1, rho=1., max_iter=500, tol=0.00
 	convergence = check_conv(theta, Z, Zold, tol=tol)
 	iter_ += 1
 	Zold = Z[:]
-	print iter_
+	#print iter_
 	#if convergence:
 	#    print 'CONVERGED HURRAH'
     
