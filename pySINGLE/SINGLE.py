@@ -16,7 +16,6 @@ class SINGLE():
     INPUT:
         - data: numpy array of multivariate data
         - h: radius of Gaussian kernel - can be empty in which case it will be estimated using cross validation
-        - pen_type: for smoothness/temporal homogeneity penalty. "Fused"=Fused Lasso, "Elastic"=Elastic Fused Lasso (squared difference). Use pen_type="Elastic" for faster computational speed
         - parallel: boolean indicating whether to run code in parallel. 
         - l1, l2: penalty coefficients for sparsity and temporal homogeneity respectively. Can be empty and will be estimated using AIC
         - norm: boolean indicating whether to normalise resulting precision matrices
@@ -28,7 +27,6 @@ class SINGLE():
     def __init__(self, data, h=None, parallel=True, l1=None, l2=None, norm=True, tol=0.001, max_iter=100):
 	self.data = data
 	self.h = h
-	self.pen_type = int(pen_type=="Fused")
 	self.parallel = int(parallel==True)
 	self.l1 = l1
 	self.l2 = l2
