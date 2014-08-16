@@ -15,13 +15,9 @@ The `SINGLE` class has the following methods (see example below):
 
 
 #### Installation:
-Install using pip:
+After downloading the ZIP file:
 
-`pip install pySINGLE`
-
-or using easy_install:
-
-`easy_install pySINGLE`
+`sudo python setup.py install`
 
 #### Example:
 We provide simulated data in the `Sample Data` folder. 
@@ -38,7 +34,7 @@ data = numpy.array(pandas.read_csv('pySINGLE/Sample Data/biggerdata.csv'))
 S = SINGLE(data=data)
 
 # estimate width of Gaussian kernel, h:
-S.fit_radius(h_vals=[5,10,15], samples=None)
+S.fit_radius(h_vals=[10,12.5, 15], samples=None)
 
 # estimate sparsity and temporal homogeneity parameters:
 S.tune_params()
