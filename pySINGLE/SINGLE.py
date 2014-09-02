@@ -34,7 +34,7 @@ class SINGLE():
 	self.C_ = None
 	self.tol = tol
 	self.max_iter = max_iter
-	self.P = None # estimate precision matrices
+	self.P = None # estimated precision matrices (filled in later)
 	self.iter_ = None
 	self.AIC = None
 		
